@@ -25,13 +25,12 @@ ollama serve
 
 In another terminal, download Gemma 3 4B and create the model name used by this project:
 
+https://ollama.com/library/translategemma
+
 ```bash
-ollama pull gemma3:4b
-ollama cp gemma3:4b translategemma:4b
+ollama pull translategemma:latest
 ollama list
 ```
-
-`translategemma:4b` is a local alias of `gemma3:4b`; it is not pulled directly from the Ollama registry.
 
 Ollama must be available at:
 
@@ -45,10 +44,10 @@ Open a terminal in the project directory:
 
 ```bash
 npm ci
-npm run dev
+npm run tauri dev
 ```
 
-The Tauri desktop application will open automatically.
+The Tauri desktop application will open automatically. `npm run dev` is the shorter equivalent command.
 
 ## Use the application
 
@@ -69,15 +68,30 @@ Existing output files are not overwritten.
 
 ## Build an installer
 
+Install all dependencies, run the quality checks, and create a release build:
+
 ```bash
-npm run build
+npm ci
+npm run check
+npm run tauri build
 ```
 
-Installers are written to:
+`npm run build` is the shorter equivalent of `npm run tauri build`.
+
+Build artifacts are written to:
 
 ```text
 src-tauri/target/release/bundle/
 ```
+
+On Windows, the installers are normally created in:
+
+```text
+src-tauri/target/release/bundle/msi/*.msi
+src-tauri/target/release/bundle/nsis/*-setup.exe
+```
+
+The first release build can take several minutes because Rust dependencies must be compiled.
 
 ## Troubleshooting
 
