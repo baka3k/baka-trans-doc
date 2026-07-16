@@ -93,6 +93,12 @@ src-tauri/target/release/bundle/nsis/*-setup.exe
 
 The first release build can take several minutes because Rust dependencies must be compiled.
 
+## ScreenShot
+
+<p align="center">
+<img src="imgs/screen.png" alt="Local Document Translator of the image">
+</p>
+
 ## Troubleshooting
 
 If Ollama is not detected, confirm that it is running and that the model exists:
