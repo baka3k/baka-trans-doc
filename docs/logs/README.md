@@ -7,3 +7,4 @@
 - [Windows release validation](2026-07-16-windows-release-validation.md)
 - [Multilingual format expansion](2026-07-16-multilingual-format-expansion.md)
 - [English interface copy](2026-07-16-english-interface-copy.md)
+- [English README setup guide](2026-07-16-english-readme-setup-guide.md)
