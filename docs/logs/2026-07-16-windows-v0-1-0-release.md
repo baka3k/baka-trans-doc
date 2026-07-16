@@ -2,7 +2,7 @@
 
 ## Context
 
-The Windows desktop application reached its first public operational release. No plan file exists for this release task; the release used the existing `0.1.0` package version (`package.json:4`, `src-tauri/tauri.conf.json:4`) and enabled Tauri bundling (`src-tauri/tauri.conf.json:28`).
+The Windows desktop application reached its first published operational release in the private GitHub repository. No plan file exists for this release task; the release used the existing `0.1.0` package version (`package.json:4`, `src-tauri/tauri.conf.json:4`) and enabled Tauri bundling (`src-tauri/tauri.conf.json:28`).
 
 ## Change
 
