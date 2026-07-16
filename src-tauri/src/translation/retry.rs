@@ -14,6 +14,9 @@ pub async fn translate_validated<T: Translator + ?Sized>(
 ) -> AppResult<String> {
     let normalized = source.replace("\r\n", "\n");
     let protected = protect::protect(&normalized)?;
+    let (source_language, target_language) = config
+        .language_pair()
+        .map_err(AppError::InvalidTranslation)?;
     let attempts = config.max_attempts.max(1);
     let mut last_error = None;
 
@@ -23,7 +26,12 @@ pub async fn translate_validated<T: Translator + ?Sized>(
         }
         let request = TranslationRequest {
             model: config.model.clone(),
-            prompt: prompt::build_prompt(&protected.value, attempt > 0),
+            prompt: prompt::build_prompt(
+                &protected.value,
+                source_language,
+                target_language,
+                attempt > 0,
+            ),
         };
         let response = tokio::select! {
             _ = cancellation.cancelled() => return Err(AppError::Cancelled),

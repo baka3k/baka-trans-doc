@@ -1,13 +1,22 @@
 ---
 title: "Mở rộng đa ngôn ngữ và định dạng tài liệu"
-status: pending
+status: implemented
 created: 2026-07-16
+implemented: 2026-07-16
 blockedBy: []
 buildsOn:
   - 260716-2039-local-document-translator
 ---
 
 # Mở rộng đa ngôn ngữ và định dạng tài liệu
+
+## Kết quả triển khai
+
+- Đã triển khai catalog ngôn ngữ backend, prompt động, output suffix canonical, checkpoint schema 2 và recovery metadata.
+- Đã chuyển orchestration sang `DocumentSession`; DOCX/PPTX giữ flow OOXML, Markdown/TXT dùng source-offset/byte-preserving exporter và XLSX dịch shared/inline strings.
+- Đã tích hợp language selects, capability/limitation, file picker và recovery UI cho các format được bật.
+- PDF có typed capability nhưng bị tắt theo ADR 004 vì chưa đạt gate mapping/font/render; picker production không quảng bá PDF và runtime không tạo output PDF.
+- `npm run check` pass với 3 frontend tests và 20 Rust tests. Manual Office/LibreOffice/installer compatibility vẫn thuộc release checklist trước khi phát hành binary.
 
 ## Tổng quan
 
@@ -133,4 +142,3 @@ Phase 03 và 04 độc lập sau khi `DocumentSession`/export contract ổn đ�
 - DTO Rust/TypeScript và docs được cập nhật cùng lúc.
 - Có fixture cho happy path, corrupt/unsupported input và giới hạn tài nguyên.
 - Không giảm các invariant offline-only, input immutable, atomic output và redacted logs.
-

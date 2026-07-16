@@ -108,7 +108,7 @@ pub fn apply_translations(
     Ok(output)
 }
 
-fn marked_text(fragments: &[String]) -> String {
+pub(crate) fn marked_text(fragments: &[String]) -> String {
     if fragments.len() == 1 {
         return fragments[0].clone();
     }

@@ -5,6 +5,10 @@ use serde::{Deserialize, Serialize};
 pub enum DocumentKind {
     Docx,
     Pptx,
+    Xlsx,
+    Pdf,
+    Markdown,
+    Text,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -15,6 +19,9 @@ pub enum UnitKind {
     Footer,
     SlideParagraph,
     DiagramParagraph,
+    SpreadsheetCell,
+    MarkdownText,
+    TextLine,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -46,4 +53,12 @@ pub struct InputInspection {
     pub character_count: usize,
     pub output_name: String,
     pub warnings: Vec<String>,
+    pub capabilities: DocumentCapabilities,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DocumentCapabilities {
+    pub can_translate: bool,
+    pub limitations: Vec<String>,
 }

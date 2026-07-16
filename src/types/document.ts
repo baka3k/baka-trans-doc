@@ -1,4 +1,15 @@
-export type DocumentKind = "docx" | "pptx";
+export type DocumentKind = "docx" | "pptx" | "xlsx" | "pdf" | "markdown" | "text";
+
+export interface LanguageInfo {
+  code: string;
+  nativeName: string;
+  displayName: string;
+}
+
+export interface DocumentCapabilities {
+  canTranslate: boolean;
+  limitations: string[];
+}
 
 export interface InputInspection {
   path: string;
@@ -8,6 +19,7 @@ export interface InputInspection {
   characterCount: number;
   outputName: string;
   warnings: string[];
+  capabilities: DocumentCapabilities;
 }
 
 export interface ModelInfo {
@@ -15,4 +27,3 @@ export interface ModelInfo {
   size?: number;
   modified_at?: string;
 }
-

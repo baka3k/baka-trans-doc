@@ -8,12 +8,17 @@
 
 # 1. Objective
 
-Develop a cross-platform desktop application using **Tauri** that translates Microsoft Office documents locally through **Ollama** while preserving the original document formatting.
+Develop a cross-platform desktop application using **Tauri** that translates documents locally through **Ollama** while preserving format-specific structure.
 
 The application must support:
 
 * DOCX
 * PPTX
+* XLSX
+* Markdown
+* UTF-8 TXT
+
+PDF is represented as a disabled capability until ADR 004's fidelity gate passes.
 
 The translated document should look as close as possible to the original.
 
@@ -23,7 +28,7 @@ The translated document should look as close as possible to the original.
 
 ### Functional Goals
 
-* Translate Japanese → Vietnamese (initial version)
+* Select source and target from the backend-owned BCP 47 catalog
 * Support local Ollama models
 * Preserve document formatting
 * Preserve images
@@ -128,6 +133,20 @@ Ignore:
 
 ---
 
+## XLSX
+
+Translate shared and inline string cells, including rich-text runs. Preserve formulas, cached results, numeric/date values, styles, workbook structure, relationships, and media. Do not translate sheet names, comments, charts, or metadata.
+
+## Markdown
+
+Translate visible text spans while preserving source syntax, frontmatter, code, URL destinations, and raw HTML.
+
+## TXT
+
+Translate UTF-8 text lines while preserving an optional BOM, newline convention, blank lines, and surrounding whitespace.
+
+---
+
 # 6. Output
 
 The application shall generate
@@ -137,7 +156,7 @@ original.docx
 
 ↓
 
-original_vi.docx
+original_en.docx
 ```
 
 or
@@ -147,7 +166,7 @@ presentation.pptx
 
 ↓
 
-presentation_vi.pptx
+presentation_zh-Hant.pptx
 ```
 
 ---
@@ -285,7 +304,7 @@ Rules:
 System Prompt
 
 ```
-You are a professional Japanese to Vietnamese translator.
+You are a professional translator from the selected catalog-backed source language to the selected target language.
 
 Rules:
 
@@ -365,13 +384,9 @@ Model
 
 [ gemma3 ▼ ]
 
-Source Language
+Source Language / Target Language
 
-[ Japanese ▼ ]
-
-Target Language
-
-[ Vietnamese ▼ ]
+[ Backend catalog ▼ ] → [ Backend catalog ▼ ]
 
 Output Folder
 
@@ -454,9 +469,7 @@ src/
 
 # 18. Future Enhancements
 
-* PDF support
-* XLSX support
-* Markdown support
+* PDF support after the fidelity gate
 * Batch translation
 * Translation memory
 * Glossary / terminology management

@@ -17,6 +17,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::backend_health,
             commands::inspect_input,
+            commands::list_languages,
+            commands::preview_output_name,
             commands::list_models,
             commands::start_translation,
             commands::cancel_translation,

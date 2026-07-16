@@ -4,15 +4,17 @@
 
 - [ ] `npm ci` hoàn tất và audit không có vulnerability đã biết.
 - [ ] `npm run check` pass trên Windows.
-- [ ] Structural tests xác nhận ZIP an toàn và part ngoài text không đổi.
+- [ ] Structural tests xác nhận ZIP an toàn, text export atomic và part ngoài text không đổi.
 - [ ] Không có URL runtime ngoài endpoint Ollama loopback.
 
 ## Compatibility
 
-- [ ] Mở mọi golden DOCX/PPTX trong Microsoft Office mà không có repair dialog.
+- [ ] Mở mọi golden DOCX/PPTX/XLSX trong Microsoft Office mà không có repair dialog.
 - [ ] Kiểm tra paragraph, table, list, hyperlink, header/footer, textbox, image và page break.
 - [ ] Kiểm tra title, shape, table, group shape, theme/master và cảnh báo overflow.
 - [ ] Smoke test LibreOffice; ghi nhận khác biệt render nhưng dùng Office làm gate Windows chính.
+- [ ] Kiểm tra XLSX formula/style/media; kiểm tra Markdown code/URL/frontmatter và TXT BOM/newline.
+- [ ] Xác nhận PDF vẫn bị tắt trừ khi toàn bộ gate ADR 004 đã pass.
 
 ## Installer
 
@@ -27,4 +29,3 @@
 - [ ] Cancel không tạo output hoàn tất giả.
 - [ ] Resume kiểm tra input/config hash.
 - [ ] Checkpoint hoàn tất được xóa và checkpoint dở có thể discard.
-

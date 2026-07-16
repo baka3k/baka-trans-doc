@@ -43,6 +43,16 @@ impl JobStatus {
             Self::Queued | Self::Running | Self::Cancelling | Self::Cancelled | Self::Failed
         )
     }
+
+    pub fn resume(self) -> AppResult<Self> {
+        match self {
+            Self::Queued | Self::Cancelled | Self::Failed => self.transition(Self::Running),
+            Self::Running | Self::Cancelling => Ok(Self::Running),
+            Self::Completed | Self::CompletedWithWarnings => Err(AppError::Internal(
+                "completed jobs cannot be resumed".into(),
+            )),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -52,5 +62,11 @@ mod tests {
     #[test]
     fn rejects_terminal_to_running_transition() {
         assert!(JobStatus::Completed.transition(JobStatus::Running).is_err());
+    }
+
+    #[test]
+    fn resumes_a_checkpoint_left_in_running_or_cancelling_state() {
+        assert_eq!(JobStatus::Running.resume().unwrap(), JobStatus::Running);
+        assert_eq!(JobStatus::Cancelling.resume().unwrap(), JobStatus::Running);
     }
 }

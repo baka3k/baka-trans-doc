@@ -10,7 +10,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub const CHECKPOINT_SCHEMA: u32 = 1;
+pub const CHECKPOINT_SCHEMA: u32 = 2;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -84,4 +84,37 @@ pub fn discard(directory: &Path, job_id: &str) -> AppResult<()> {
         fs::remove_file(path)?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    #[test]
+    fn lists_an_old_schema_as_incompatible_with_defaulted_legacy_pair() {
+        let directory = tempdir().unwrap();
+        let value = serde_json::json!({
+            "schemaVersion": 1,
+            "adapterVersion": env!("CARGO_PKG_VERSION"),
+            "jobId": "legacy",
+            "status": "cancelled",
+            "request": {
+                "inputPath": "old.docx", "outputFolder": ".", "endpoint": "http://localhost:11434",
+                "model": "fake", "chunkChars": 1800
+            },
+            "inputHash": "input", "configHash": "config", "translations": {}, "warnings": [],
+            "updatedAt": "2026-07-16T00:00:00Z"
+        });
+        fs::write(
+            directory.path().join("legacy.json"),
+            serde_json::to_vec(&value).unwrap(),
+        )
+        .unwrap();
+        let listed = list(directory.path()).unwrap();
+        assert_eq!(listed.len(), 1);
+        assert!(!listed[0].is_compatible());
+        assert_eq!(listed[0].request.source_language, "ja");
+        assert_eq!(listed[0].request.target_language, "vi");
+    }
 }

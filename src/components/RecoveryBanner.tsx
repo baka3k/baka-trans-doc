@@ -10,15 +10,14 @@ export function RecoveryBanner({ job, onResume, onDiscard }: Props) {
   return (
     <aside className="recovery-banner" aria-label="Khôi phục công việc">
       <div>
-        <span className="eyebrow">CÓ THỂ KHÔI PHỤC</span>
+        <span className="eyebrow">{job.compatible ? "CÓ THỂ KHÔI PHỤC" : "CHECKPOINT KHÔNG TƯƠNG THÍCH"}</span>
         <strong>{job.inputPath.split(/[\\/]/).pop()}</strong>
-        <small>{job.completedUnits} mục đã hoàn tất · model {job.model}</small>
+        <small>{job.sourceLanguage} → {job.targetLanguage} · {job.format.toUpperCase()} · {job.completedUnits} mục · model {job.model}</small>
       </div>
       <div className="inline-actions">
-        <button className="button compact" type="button" onClick={onResume}>Tiếp tục</button>
+        {job.compatible && <button className="button compact" type="button" onClick={onResume}>Tiếp tục</button>}
         <button className="text-button" type="button" onClick={onDiscard}>Bỏ checkpoint</button>
       </div>
     </aside>
   );
 }
-

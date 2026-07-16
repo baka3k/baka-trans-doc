@@ -5,6 +5,50 @@ use crate::{
 use std::{fs, path::Path};
 
 pub fn export_atomic(package: &OoxmlPackage, input: &Path, output: &Path) -> AppResult<()> {
+    export_with(
+        input,
+        output,
+        |temp| package.write(temp),
+        |temp| {
+            let validated = OoxmlPackage::open(temp)?;
+            if validated.entries.len() != package.entries.len() {
+                return Err(AppError::InvalidDocument(
+                    "exported package lost one or more parts".into(),
+                ));
+            }
+            Ok(())
+        },
+    )
+}
+
+pub fn export_bytes_atomic(bytes: &[u8], input: &Path, output: &Path) -> AppResult<()> {
+    export_with(
+        input,
+        output,
+        |temp| {
+            fs::write(temp, bytes)?;
+            Ok(())
+        },
+        |temp| {
+            let written = fs::read(temp)?;
+            if written != bytes {
+                return Err(AppError::Io("exported file failed byte validation".into()));
+            }
+            let payload = written
+                .strip_prefix(&[0xEF, 0xBB, 0xBF])
+                .unwrap_or(&written);
+            std::str::from_utf8(payload)
+                .map_err(|_| AppError::InvalidDocument("exported text is not UTF-8".into()))?;
+            Ok(())
+        },
+    )
+}
+
+fn export_with<W, V>(input: &Path, output: &Path, write: W, validate: V) -> AppResult<()>
+where
+    W: FnOnce(&Path) -> AppResult<()>,
+    V: FnOnce(&Path) -> AppResult<()>,
+{
     if output.exists() {
         return Err(AppError::OutputExists(output.display().to_string()));
     }
@@ -25,13 +69,8 @@ pub fn export_atomic(package: &OoxmlPackage, input: &Path, output: &Path) -> App
 
     let temp = sibling_temp_path(&resolved_output)?;
     let result = (|| {
-        package.write(&temp)?;
-        let validated = OoxmlPackage::open(&temp)?;
-        if validated.entries.len() != package.entries.len() {
-            return Err(AppError::InvalidDocument(
-                "exported package lost one or more parts".into(),
-            ));
-        }
+        write(&temp)?;
+        validate(&temp)?;
         fs::rename(&temp, &resolved_output)?;
         Ok(())
     })();

@@ -47,7 +47,9 @@ button { color: inherit; }
 .selected .file-icon { background: #173f36; }
 .language-row { display: grid; grid-template-columns: 1fr 32px 1fr; align-items: center; margin: 24px 0; padding: 14px 0; border-top: 1px solid #e2ddd2; border-bottom: 1px solid #e2ddd2; }
 .language-row > i { text-align: center; color: #9a9a90; font-style: normal; }
-.language-row label { display: block; color: #8c8d86; font-size: 10px; text-transform: uppercase; margin-bottom: 5px; }
+.language-row label { display: block; color: #8c8d86; font-size: 10px; text-transform: uppercase; }
+.language-row label > span { display: block; margin-bottom: 5px; }
+.language-row select { min-width: 0; text-transform: none; color: #1d2925; font-size: 12px; }
 .language-row strong { font-size: 13px; }
 .language-row strong span { display: inline-grid; place-items: center; width: 25px; height: 25px; margin-right: 7px; border-radius: 50%; color: #173f36; background: #e2e8e3; }
 .field-grid { display: grid; grid-template-columns: 1fr 1.45fr; gap: 14px; margin-bottom: 19px; }
@@ -61,6 +63,7 @@ select:focus, input:focus, .path-picker:focus-visible { border-color: #2f6457; b
 .path-picker span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #676d69; font-size: 12px; }
 .output-preview { margin: 7px 0 0; color: #81847d; font-size: 11px; }
 .error-banner { margin-top: 14px; padding: 11px 13px; border-left: 3px solid #b44935; background: #f7e8e3; color: #7f3325; font-size: 12px; }
+.capability-note { margin-top: 10px; padding: 10px 12px; border-left: 3px solid #c58a43; background: #f5ead3; color: #6f512e; font-size: 11px; line-height: 1.45; }
 .button { border: 0; min-height: 42px; padding: 0 18px; background: #173f36; color: #fff; font-weight: 700; font-size: 12px; letter-spacing: .02em; cursor: pointer; }
 .button:disabled { cursor: not-allowed; opacity: .38; }
 .button.primary { width: 100%; min-height: 50px; margin-top: 22px; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 13px; }

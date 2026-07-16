@@ -1,5 +1,5 @@
 use crate::{
-    document::{DocumentPackage, model::InputInspection},
+    document::{DocumentSession, model::InputInspection, output_file_name},
     error::{AppError, AppResult},
     job::{
         JobManager, StartTranslationRequest,
@@ -7,7 +7,10 @@ use crate::{
         orchestrator,
         state::JobStatus,
     },
-    translation::ollama::{ModelInfo, OllamaClient},
+    translation::{
+        language::{self, LanguageInfo},
+        ollama::{ModelInfo, OllamaClient},
+    },
 };
 use serde::Serialize;
 use std::path::{Path, PathBuf};
@@ -30,6 +33,10 @@ pub struct RecoverableJob {
     status: JobStatus,
     input_path: String,
     model: String,
+    source_language: String,
+    target_language: String,
+    format: String,
+    compatible: bool,
     completed_units: usize,
     warning_count: usize,
     updated_at: String,
@@ -37,11 +44,21 @@ pub struct RecoverableJob {
 
 impl From<CheckpointManifest> for RecoverableJob {
     fn from(value: CheckpointManifest) -> Self {
+        let compatible = value.is_compatible();
+        let format = Path::new(&value.request.input_path)
+            .extension()
+            .and_then(|item| item.to_str())
+            .unwrap_or_default()
+            .to_ascii_lowercase();
         Self {
             job_id: value.job_id,
             status: value.status,
             input_path: value.request.input_path,
             model: value.request.model,
+            source_language: value.request.source_language,
+            target_language: value.request.target_language,
+            format,
+            compatible,
             completed_units: value.translations.len(),
             warning_count: value.warnings.len(),
             updated_at: value.updated_at.to_rfc3339(),
@@ -59,10 +76,22 @@ pub fn backend_health() -> BackendHealth {
 }
 
 #[tauri::command]
-pub async fn inspect_input(path: String) -> AppResult<InputInspection> {
-    tauri::async_runtime::spawn_blocking(move || DocumentPackage::inspect(Path::new(&path)))
-        .await
-        .map_err(|error| AppError::Internal(error.to_string()))?
+pub async fn inspect_input(path: String, target_language: String) -> AppResult<InputInspection> {
+    tauri::async_runtime::spawn_blocking(move || {
+        DocumentSession::inspect(Path::new(&path), &target_language)
+    })
+    .await
+    .map_err(|error| AppError::Internal(error.to_string()))?
+}
+
+#[tauri::command]
+pub fn list_languages() -> Vec<LanguageInfo> {
+    language::catalog().to_vec()
+}
+
+#[tauri::command]
+pub fn preview_output_name(path: String, target_language: String) -> AppResult<String> {
+    output_file_name(Path::new(&path), &target_language)
 }
 
 #[tauri::command]
@@ -74,8 +103,9 @@ pub async fn list_models(endpoint: String) -> AppResult<Vec<ModelInfo>> {
 pub fn start_translation(
     app: AppHandle,
     manager: State<'_, JobManager>,
-    request: StartTranslationRequest,
+    mut request: StartTranslationRequest,
 ) -> AppResult<String> {
+    request.normalize_languages().map_err(AppError::Internal)?;
     request.config().validate().map_err(AppError::Internal)?;
     let checkpoint_dir = checkpoint_directory(&app)?;
     let job_id = Uuid::new_v4().to_string();

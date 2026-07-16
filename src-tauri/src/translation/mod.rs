@@ -1,4 +1,5 @@
 pub mod chunk;
+pub mod language;
 pub mod ollama;
 pub mod prompt;
 pub mod protect;
@@ -40,6 +41,8 @@ mod tests {
         let config = TranslationConfig {
             endpoint: "http://localhost:11434".into(),
             model: "fake".into(),
+            source_language: "ja".into(),
+            target_language: "vi".into(),
             chunk_chars: 1_800,
             timeout_secs: 10,
             max_attempts: 2,

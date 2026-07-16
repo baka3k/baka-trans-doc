@@ -36,10 +36,9 @@
       "icons/icon.ico"
     ],
     "shortDescription": "Translate DOCX and PPTX locally with Ollama",
-    "longDescription": "An offline Japanese to Vietnamese document translator that preserves Office document structure and formatting.",
+    "longDescription": "An offline multilingual document translator for DOCX, PPTX, XLSX, Markdown, and UTF-8 TXT that preserves format-specific structure.",
     "windows": {
       "wix": { "language": "en-US" }
     }
   }
 }
-

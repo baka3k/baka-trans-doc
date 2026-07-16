@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
-import type { InputInspection, ModelInfo } from "../types/document";
+import type { InputInspection, LanguageInfo, ModelInfo } from "../types/document";
 import type {
   JobProgress,
   RecoverableJob,
@@ -16,7 +16,7 @@ export async function chooseInput(): Promise<string | null> {
   const selected = await open({
     multiple: false,
     directory: false,
-    filters: [{ name: "Office documents", extensions: ["docx", "pptx"] }],
+    filters: [{ name: "Translatable documents", extensions: ["docx", "pptx", "xlsx", "md", "markdown", "txt"] }],
   });
   return selected;
 }
@@ -27,8 +27,14 @@ export async function chooseOutputFolder(): Promise<string | null> {
   return selected;
 }
 
-export const inspectInput = (path: string) =>
-  invoke<InputInspection>("inspect_input", { path });
+export const inspectInput = (path: string, targetLanguage: string) =>
+  invoke<InputInspection>("inspect_input", { path, targetLanguage });
+
+export const listLanguages = () =>
+  invoke<LanguageInfo[]>("list_languages");
+
+export const previewOutputName = (path: string, targetLanguage: string) =>
+  invoke<string>("preview_output_name", { path, targetLanguage });
 
 export const listModels = (endpoint: string) =>
   invoke<ModelInfo[]>("list_models", { endpoint });
@@ -56,4 +62,3 @@ export const onJobProgress = (
 export async function showOutput(path: string): Promise<void> {
   await revealItemInDir(path);
 }
-

@@ -8,18 +8,21 @@ import {
   discardJob,
   inspectInput,
   isDesktop,
+  listLanguages,
   listModels,
   listRecoverableJobs,
   onJobProgress,
+  previewOutputName,
   resumeTranslation,
   showOutput,
   startTranslation,
 } from "../lib/tauri";
 import { acceptProgress, type JobViewState } from "../store/job";
-import type { InputInspection, ModelInfo } from "../types/document";
+import type { DocumentKind, InputInspection, LanguageInfo, ModelInfo } from "../types/document";
 import type { RecoverableJob } from "../types/job";
 
 const DEFAULT_ENDPOINT = "http://localhost:11434";
+const FILE_ICONS: Record<DocumentKind, string> = { docx: "W", pptx: "P", xlsx: "X", pdf: "PDF", markdown: "MD", text: "TXT" };
 
 function readableError(error: unknown): string {
   if (typeof error === "string") return error;
@@ -32,6 +35,9 @@ export function App() {
   const [inspection, setInspection] = useState<InputInspection>();
   const [outputFolder, setOutputFolder] = useState("");
   const [models, setModels] = useState<ModelInfo[]>([]);
+  const [languages, setLanguages] = useState<LanguageInfo[]>([]);
+  const [sourceLanguage, setSourceLanguage] = useState("ja");
+  const [targetLanguage, setTargetLanguage] = useState("vi");
   const [model, setModel] = useState("");
   const [ollamaState, setOllamaState] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState("");
@@ -60,6 +66,11 @@ export function App() {
       return;
     }
     void refreshModels();
+    void listLanguages().then((items) => {
+      setLanguages(items);
+      setSourceLanguage((current) => items.some((item) => item.code === current) ? current : items[0]?.code ?? "");
+      setTargetLanguage((current) => items.some((item) => item.code === current) ? current : items[1]?.code ?? "");
+    }).catch((cause) => setError(readableError(cause)));
     void listRecoverableJobs().then(setRecoverable).catch(() => setRecoverable([]));
     let cleanup: (() => void) | undefined;
     void onJobProgress((progress) => {
@@ -68,12 +79,19 @@ export function App() {
     return () => cleanup?.();
   }, [refreshModels]);
 
+  useEffect(() => {
+    if (!inspection || !targetLanguage) return;
+    void previewOutputName(inspection.path, targetLanguage)
+      .then((outputName) => setInspection((current) => current?.path === inspection.path ? { ...current, outputName } : current))
+      .catch((cause) => setError(readableError(cause)));
+  }, [inspection?.path, targetLanguage]);
+
   const selectInput = async () => {
     const path = await chooseInput();
     if (!path) return;
     setError("");
     try {
-      setInspection(await inspectInput(path));
+      setInspection(await inspectInput(path, targetLanguage));
     } catch (cause) {
       setInspection(undefined);
       setError(readableError(cause));
@@ -86,7 +104,8 @@ export function App() {
   };
 
   const canStart = Boolean(
-    inspection && outputFolder && model && ollamaState === "ready" &&
+    inspection && inspection.capabilities.canTranslate && outputFolder && model && languages.length > 0 &&
+    sourceLanguage && targetLanguage && sourceLanguage !== targetLanguage && ollamaState === "ready" &&
     !["running", "queued"].includes(jobState.progress?.status ?? ""),
   );
 
@@ -100,6 +119,8 @@ export function App() {
         outputFolder,
         endpoint,
         model,
+        sourceLanguage,
+        targetLanguage,
         chunkChars: 1800,
       });
       setJobState({ activeJobId: jobId, logs: [] });
@@ -131,7 +152,7 @@ export function App() {
         <div className="brand-mark">文<span>V</span></div>
         <div>
           <p className="brand-title">LOCAL DOCUMENT TRANSLATOR</p>
-          <p className="brand-subtitle">Nhật → Việt · Riêng tư · Ngoại tuyến</p>
+          <p className="brand-subtitle">Đa ngôn ngữ · Riêng tư · Ngoại tuyến</p>
         </div>
         <div className={`status-pill ${ollamaState}`}>
           <i /> Ollama {ollamaState === "ready" ? "đã kết nối" : ollamaState === "loading" ? "đang kiểm tra" : "chưa sẵn sàng"}
@@ -158,19 +179,24 @@ export function App() {
 
           <label className="field-label">Tài liệu nguồn</label>
           <button type="button" className={`file-drop ${inspection ? "selected" : ""}`} onClick={() => void selectInput()}>
-            <span className="file-icon">{inspection?.kind === "pptx" ? "P" : "W"}</span>
+            <span className="file-icon">{inspection ? FILE_ICONS[inspection.kind] : "DOC"}</span>
             <span>
-              <strong>{inspection?.fileName ?? "Chọn file DOCX hoặc PPTX"}</strong>
+              <strong>{inspection?.fileName ?? "Chọn DOCX, PPTX, XLSX, Markdown hoặc TXT"}</strong>
               <small>{inspection ? `${inspection.unitCount.toLocaleString("vi-VN")} mục · ${inspection.characterCount.toLocaleString("vi-VN")} ký tự` : "Không tải lên cloud — file luôn ở trên máy"}</small>
             </span>
             <b>{inspection ? "Đổi file" : "Duyệt"}</b>
           </button>
 
           <div className="language-row">
-            <div><label>Nguồn</label><strong><span>日</span> Tiếng Nhật</strong></div>
+            <label><span>Nguồn</span><select aria-label="Ngôn ngữ nguồn" value={sourceLanguage} onChange={(event) => setSourceLanguage(event.target.value)}>
+              {languages.map((language) => <option key={language.code} value={language.code}>{language.nativeName} · {language.displayName}</option>)}
+            </select></label>
             <i>→</i>
-            <div><label>Đích</label><strong><span>V</span> Tiếng Việt</strong></div>
+            <label><span>Đích</span><select aria-label="Ngôn ngữ đích" value={targetLanguage} onChange={(event) => setTargetLanguage(event.target.value)}>
+              {languages.map((language) => <option key={language.code} value={language.code}>{language.nativeName} · {language.displayName}</option>)}
+            </select></label>
           </div>
+          {sourceLanguage === targetLanguage && <div className="error-banner" role="alert">Ngôn ngữ nguồn và đích phải khác nhau.</div>}
 
           <div className="field-grid">
             <label>
@@ -191,6 +217,7 @@ export function App() {
             <span>{outputFolder || "Chọn thư mục lưu file dịch"}</span><b>Duyệt</b>
           </button>
           {inspection && outputFolder && <p className="output-preview">Sẽ tạo: <strong>{inspection.outputName}</strong></p>}
+          {inspection && [...inspection.capabilities.limitations, ...inspection.warnings].map((warning) => <div className="capability-note" key={warning}>{warning}</div>)}
           {error && <div className="error-banner" role="alert">{error}</div>}
 
           <button type="button" className="button primary" disabled={!canStart} onClick={() => void begin()}>
@@ -201,7 +228,7 @@ export function App() {
         <aside className="status-panel">
           <div className="section-intro compact-intro">
             <span className="step-number">02</span>
-            <div><h1>Tiến độ</h1><p>Theo dõi từng paragraph hoặc slide.</p></div>
+            <div><h1>Tiến độ</h1><p>Theo dõi từng mục theo vị trí do định dạng cung cấp.</p></div>
           </div>
           <ProgressPanel
             progress={progress}
@@ -221,8 +248,7 @@ export function App() {
           {recentWarnings.length > 0 && <p className="privacy-note">Có {recentWarnings.length} cảnh báo gần đây. Nội dung tài liệu không được ghi vào log.</p>}
         </aside>
       </div>
-      <footer><span>Offline by design</span><span>DOCX · PPTX</span><span>Không telemetry</span></footer>
+      <footer><span>Offline by design</span><span>DOCX · PPTX · XLSX · MD · TXT</span><span>Không telemetry</span></footer>
     </main>
   );
 }
-

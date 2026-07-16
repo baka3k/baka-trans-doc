@@ -1,5 +1,5 @@
 use crate::{
-    document::DocumentPackage,
+    document::{DocumentSession, output_file_name},
     error::{AppError, AppResult},
     job::{
         StartTranslationRequest,
@@ -8,7 +8,7 @@ use crate::{
         report::JobWarning,
         state::JobStatus,
     },
-    storage::{export::export_atomic, package::file_sha256},
+    storage::package::file_sha256,
     translation::{chunk::plan_atomic_unit, ollama::OllamaClient, retry::translate_validated},
 };
 use chrono::Utc;
@@ -55,7 +55,7 @@ pub async fn run(
             "input, configuration, schema, or adapter version changed".into(),
         ));
     }
-    manifest.status = manifest.status.transition(JobStatus::Running)?;
+    manifest.status = manifest.status.resume()?;
     manifest.updated_at = Utc::now();
     checkpoint::write(&checkpoint_dir, &manifest)?;
 
@@ -71,11 +71,11 @@ pub async fn run(
             eta_seconds: None,
             current_item: None,
             warning: None,
-            message: "Reading the Office package safely".into(),
+            message: "Reading the document safely".into(),
             output_path: None,
         },
     );
-    let mut document = DocumentPackage::open(&input)?;
+    let mut document = DocumentSession::open(&input)?;
     for (unit_id, translation) in &manifest.translations {
         document.set_translation(unit_id, translation.clone());
     }
@@ -144,18 +144,12 @@ pub async fn run(
         let started = Instant::now();
         match translate_validated(&client, &config, &decision.text, &cancellation).await {
             Ok(translated) => {
-                if matches!(document_kind_from_path(&input), Some("pptx")) {
-                    let source_len = unit.text.chars().count().max(1) as f64;
-                    let ratio = translated.chars().count() as f64 / source_len;
-                    if ratio > 1.8 {
-                        manifest.warnings.push(JobWarning {
-                            unit_id: Some(unit.id.clone()),
-                            location: Some(unit.location.clone()),
-                            message: format!(
-                                "Possible slide overflow (text expansion {ratio:.1}×)"
-                            ),
-                        });
-                    }
+                if let Some(message) = document.expansion_warning(&unit.text, &translated) {
+                    manifest.warnings.push(JobWarning {
+                        unit_id: Some(unit.id.clone()),
+                        location: Some(unit.location.clone()),
+                        message,
+                    });
                 }
                 document.set_translation(&unit.id, translated.clone());
                 manifest.translations.insert(unit.id.clone(), translated);
@@ -194,6 +188,32 @@ pub async fn run(
         );
     }
 
+    if cancellation.is_cancelled() {
+        manifest.status = manifest
+            .status
+            .transition(JobStatus::Cancelling)?
+            .transition(JobStatus::Cancelled)?;
+        manifest.updated_at = Utc::now();
+        checkpoint::write(&checkpoint_dir, &manifest)?;
+        emit(
+            &app,
+            JobProgress {
+                job_id: job_id.clone(),
+                status: JobStatus::Cancelled,
+                phase: "cancelled".into(),
+                current: total,
+                total,
+                percent: percent(total, total),
+                eta_seconds: None,
+                current_item: None,
+                warning: None,
+                message: "Translation cancelled; a recovery checkpoint was kept".into(),
+                output_path: None,
+            },
+        );
+        return Ok(());
+    }
+
     if total > 0 && successful == 0 {
         return Err(AppError::OllamaUnavailable(
             "no translation unit completed successfully; no output was written".into(),
@@ -211,12 +231,11 @@ pub async fn run(
             eta_seconds: None,
             current_item: None,
             warning: None,
-            message: "Validating and atomically exporting the translated package".into(),
+            message: "Validating and atomically exporting the translated document".into(),
             output_path: None,
         },
     );
-    let package = document.translated_package()?;
-    export_atomic(&package, &input, &output)?;
+    document.export_atomic(&input, &output)?;
     manifest.status = manifest
         .status
         .transition(if manifest.warnings.is_empty() {
@@ -316,17 +335,5 @@ fn percent(current: usize, total: usize) -> f64 {
 
 fn output_path(request: &StartTranslationRequest) -> AppResult<PathBuf> {
     let input = Path::new(&request.input_path);
-    let stem = input
-        .file_stem()
-        .and_then(|value| value.to_str())
-        .ok_or_else(|| AppError::UnsafeOutput("invalid input file name".into()))?;
-    let extension = input
-        .extension()
-        .and_then(|value| value.to_str())
-        .ok_or_else(|| AppError::UnsafeOutput("input has no extension".into()))?;
-    Ok(Path::new(&request.output_folder).join(format!("{stem}_vi.{extension}")))
-}
-
-fn document_kind_from_path(path: &Path) -> Option<&str> {
-    path.extension()?.to_str()
+    Ok(Path::new(&request.output_folder).join(output_file_name(input, &request.target_language)?))
 }

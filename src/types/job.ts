@@ -26,6 +26,8 @@ export interface StartTranslationRequest {
   outputFolder: string;
   endpoint: string;
   model: string;
+  sourceLanguage: string;
+  targetLanguage: string;
   chunkChars?: number;
 }
 
@@ -34,8 +36,11 @@ export interface RecoverableJob {
   status: JobStatus;
   inputPath: string;
   model: string;
+  sourceLanguage: string;
+  targetLanguage: string;
+  format: string;
+  compatible: boolean;
   completedUnits: number;
   warningCount: number;
   updatedAt: string;
 }
-

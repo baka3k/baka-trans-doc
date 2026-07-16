@@ -19,19 +19,42 @@ pub struct StartTranslationRequest {
     pub output_folder: String,
     pub endpoint: String,
     pub model: String,
+    #[serde(default = "default_source_language")]
+    pub source_language: String,
+    #[serde(default = "default_target_language")]
+    pub target_language: String,
     pub chunk_chars: Option<usize>,
 }
 
 impl StartTranslationRequest {
+    pub fn normalize_languages(&mut self) -> Result<(), String> {
+        let (source, target) = crate::translation::language::validate_pair(
+            &self.source_language,
+            &self.target_language,
+        )?;
+        self.source_language = source.code.into();
+        self.target_language = target.code.into();
+        Ok(())
+    }
+
     pub fn config(&self) -> TranslationConfig {
         TranslationConfig {
             endpoint: self.endpoint.clone(),
             model: self.model.clone(),
+            source_language: self.source_language.clone(),
+            target_language: self.target_language.clone(),
             chunk_chars: self.chunk_chars.unwrap_or(1_800),
             timeout_secs: 120,
             max_attempts: 3,
         }
     }
+}
+
+fn default_source_language() -> String {
+    "ja".into()
+}
+fn default_target_language() -> String {
+    "vi".into()
 }
 
 #[derive(Clone, Default)]
