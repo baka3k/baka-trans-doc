@@ -27,7 +27,7 @@ const FILE_ICONS: Record<DocumentKind, string> = { docx: "W", pptx: "P", xlsx: "
 function readableError(error: unknown): string {
   if (typeof error === "string") return error;
   if (error && typeof error === "object" && "message" in error) return String(error.message);
-  return "Đã xảy ra lỗi không xác định";
+  return "An unknown error occurred";
 }
 
 export function App() {
@@ -62,7 +62,7 @@ export function App() {
   useEffect(() => {
     if (!isDesktop()) {
       setOllamaState("error");
-      setError("Mở ứng dụng bằng Tauri để kết nối Ollama và chọn file cục bộ.");
+      setError("Open the Tauri desktop app to connect to Ollama and select local files.");
       return;
     }
     void refreshModels();
@@ -152,10 +152,10 @@ export function App() {
         <div className="brand-mark">文<span>V</span></div>
         <div>
           <p className="brand-title">LOCAL DOCUMENT TRANSLATOR</p>
-          <p className="brand-subtitle">Đa ngôn ngữ · Riêng tư · Ngoại tuyến</p>
+          <p className="brand-subtitle">Multilingual · Private · Offline</p>
         </div>
         <div className={`status-pill ${ollamaState}`}>
-          <i /> Ollama {ollamaState === "ready" ? "đã kết nối" : ollamaState === "loading" ? "đang kiểm tra" : "chưa sẵn sàng"}
+          <i /> Ollama {ollamaState === "ready" ? "connected" : ollamaState === "loading" ? "checking" : "not ready"}
         </div>
       </header>
 
@@ -174,61 +174,61 @@ export function App() {
         <section className="form-panel">
           <div className="section-intro">
             <span className="step-number">01</span>
-            <div><h1>Chuẩn bị bản dịch</h1><p>Chọn tài liệu và cấu hình xử lý cục bộ.</p></div>
+            <div><h1>Prepare translation</h1><p>Choose a document and configure local processing.</p></div>
           </div>
 
-          <label className="field-label">Tài liệu nguồn</label>
+          <label className="field-label">Source document</label>
           <button type="button" className={`file-drop ${inspection ? "selected" : ""}`} onClick={() => void selectInput()}>
             <span className="file-icon">{inspection ? FILE_ICONS[inspection.kind] : "DOC"}</span>
             <span>
-              <strong>{inspection?.fileName ?? "Chọn DOCX, PPTX, XLSX, Markdown hoặc TXT"}</strong>
-              <small>{inspection ? `${inspection.unitCount.toLocaleString("vi-VN")} mục · ${inspection.characterCount.toLocaleString("vi-VN")} ký tự` : "Không tải lên cloud — file luôn ở trên máy"}</small>
+              <strong>{inspection?.fileName ?? "Choose a DOCX, PPTX, XLSX, Markdown, or TXT file"}</strong>
+              <small>{inspection ? `${inspection.unitCount.toLocaleString("en-US")} items · ${inspection.characterCount.toLocaleString("en-US")} characters` : "Nothing is uploaded — the file stays on this device"}</small>
             </span>
-            <b>{inspection ? "Đổi file" : "Duyệt"}</b>
+            <b>{inspection ? "Change" : "Browse"}</b>
           </button>
 
           <div className="language-row">
-            <label><span>Nguồn</span><select aria-label="Ngôn ngữ nguồn" value={sourceLanguage} onChange={(event) => setSourceLanguage(event.target.value)}>
+            <label><span>Source</span><select aria-label="Source language" value={sourceLanguage} onChange={(event) => setSourceLanguage(event.target.value)}>
               {languages.map((language) => <option key={language.code} value={language.code}>{language.nativeName} · {language.displayName}</option>)}
             </select></label>
             <i>→</i>
-            <label><span>Đích</span><select aria-label="Ngôn ngữ đích" value={targetLanguage} onChange={(event) => setTargetLanguage(event.target.value)}>
+            <label><span>Target</span><select aria-label="Target language" value={targetLanguage} onChange={(event) => setTargetLanguage(event.target.value)}>
               {languages.map((language) => <option key={language.code} value={language.code}>{language.nativeName} · {language.displayName}</option>)}
             </select></label>
           </div>
-          {sourceLanguage === targetLanguage && <div className="error-banner" role="alert">Ngôn ngữ nguồn và đích phải khác nhau.</div>}
+          {sourceLanguage === targetLanguage && <div className="error-banner" role="alert">Source and target languages must be different.</div>}
 
           <div className="field-grid">
             <label>
-              <span className="field-label">Model Ollama</span>
+              <span className="field-label">Ollama model</span>
               <select value={model} onChange={(event) => setModel(event.target.value)} disabled={ollamaState !== "ready"}>
-                <option value="">{ollamaState === "loading" ? "Đang tải model…" : "Chọn model"}</option>
+                <option value="">{ollamaState === "loading" ? "Loading models…" : "Select a model"}</option>
                 {models.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}
               </select>
             </label>
             <label>
               <span className="field-label">Ollama endpoint</span>
-              <div className="input-action"><input value={endpoint} onChange={(event) => setEndpoint(event.target.value)} /><button type="button" onClick={() => void refreshModels()}>Kiểm tra</button></div>
+              <div className="input-action"><input value={endpoint} onChange={(event) => setEndpoint(event.target.value)} /><button type="button" onClick={() => void refreshModels()}>Check</button></div>
             </label>
           </div>
 
-          <label className="field-label">Thư mục kết quả</label>
+          <label className="field-label">Output folder</label>
           <button type="button" className="path-picker" onClick={() => void selectOutput()}>
-            <span>{outputFolder || "Chọn thư mục lưu file dịch"}</span><b>Duyệt</b>
+            <span>{outputFolder || "Choose where to save translated files"}</span><b>Browse</b>
           </button>
-          {inspection && outputFolder && <p className="output-preview">Sẽ tạo: <strong>{inspection.outputName}</strong></p>}
+          {inspection && outputFolder && <p className="output-preview">Will create: <strong>{inspection.outputName}</strong></p>}
           {inspection && [...inspection.capabilities.limitations, ...inspection.warnings].map((warning) => <div className="capability-note" key={warning}>{warning}</div>)}
           {error && <div className="error-banner" role="alert">{error}</div>}
 
           <button type="button" className="button primary" disabled={!canStart} onClick={() => void begin()}>
-            Bắt đầu dịch <span>→</span>
+            Start translation <span>→</span>
           </button>
         </section>
 
         <aside className="status-panel">
           <div className="section-intro compact-intro">
             <span className="step-number">02</span>
-            <div><h1>Tiến độ</h1><p>Theo dõi từng mục theo vị trí do định dạng cung cấp.</p></div>
+            <div><h1>Progress</h1><p>Track each item using its format-specific location.</p></div>
           </div>
           <ProgressPanel
             progress={progress}
@@ -236,19 +236,19 @@ export function App() {
           />
           {progress?.outputPath && (
             <button className="button result" type="button" onClick={() => void showOutput(progress.outputPath!)}>
-              Mở vị trí file kết quả
+              Show output in folder
             </button>
           )}
           <div className="activity-log">
-            <div className="log-heading"><h3>Nhật ký</h3><span>{jobState.logs.length} sự kiện</span></div>
-            {jobState.logs.length === 0 ? <p>Chưa có hoạt động.</p> : jobState.logs.slice(-5).reverse().map((entry, index) => (
+            <div className="log-heading"><h3>Activity</h3><span>{jobState.logs.length} {jobState.logs.length === 1 ? "event" : "events"}</span></div>
+            {jobState.logs.length === 0 ? <p>No activity yet.</p> : jobState.logs.slice(-5).reverse().map((entry, index) => (
               <div className="log-line" key={`${entry.phase}-${entry.current}-${index}`}><i className={entry.warning ? "warn" : ""}/><span>{entry.message}<small>{entry.currentItem}</small></span></div>
             ))}
           </div>
-          {recentWarnings.length > 0 && <p className="privacy-note">Có {recentWarnings.length} cảnh báo gần đây. Nội dung tài liệu không được ghi vào log.</p>}
+          {recentWarnings.length > 0 && <p className="privacy-note">{recentWarnings.length} recent {recentWarnings.length === 1 ? "warning" : "warnings"}. Document content is never written to logs.</p>}
         </aside>
       </div>
-      <footer><span>Offline by design</span><span>DOCX · PPTX · XLSX · MD · TXT</span><span>Không telemetry</span></footer>
+      <footer><span>Offline by design</span><span>DOCX · PPTX · XLSX · MD · TXT</span><span>No telemetry</span></footer>
     </main>
   );
 }

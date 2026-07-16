@@ -33,7 +33,6 @@ describe("job view state", () => {
     expect(
       acceptProgress(state, { ...state.progress!, percent: 40 }).progress?.percent,
     ).toBe(50);
-    expect(formatEta(61)).toBe("Khoảng 2 phút");
+    expect(formatEta(61)).toBe("About 2 minutes");
   });
 });
-

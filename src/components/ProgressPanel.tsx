@@ -7,21 +7,21 @@ interface Props {
 }
 
 const phaseLabel: Record<string, string> = {
-  extracting: "Đang đọc tài liệu",
-  translating: "Đang dịch",
-  exporting: "Đang kiểm tra và xuất file",
-  completed: "Hoàn tất",
-  cancelled: "Đã hủy",
-  failed: "Có lỗi",
+  extracting: "Reading document",
+  translating: "Translating",
+  exporting: "Validating and exporting",
+  completed: "Complete",
+  cancelled: "Cancelled",
+  failed: "Error",
 };
 
 export function ProgressPanel({ progress, onCancel }: Props) {
   if (!progress) {
     return (
-      <section className="progress-card idle" aria-label="Tiến độ">
-        <span className="eyebrow">SẴN SÀNG</span>
-        <h2>Tài liệu được xử lý hoàn toàn trên máy này.</h2>
-        <p>Chọn file, model Ollama và thư mục đích để bắt đầu.</p>
+      <section className="progress-card idle" aria-label="Progress">
+        <span className="eyebrow">READY</span>
+        <h2>Documents are processed entirely on this device.</h2>
+        <p>Select a file, an Ollama model, and an output folder to begin.</p>
       </section>
     );
   }
@@ -45,16 +45,15 @@ export function ProgressPanel({ progress, onCancel }: Props) {
         <span style={{ width: `${progress.percent}%` }} />
       </div>
       <div className="progress-meta">
-        <span>{progress.total ? `${progress.current} / ${progress.total} mục` : "Đang chuẩn bị"}</span>
+        <span>{progress.total ? `${progress.current} / ${progress.total} items` : "Preparing"}</span>
         <span>{formatEta(progress.etaSeconds)}</span>
       </div>
       {progress.warning && <p className="warning-note">{progress.warning}</p>}
       {active && (
         <button type="button" className="button ghost danger" onClick={onCancel}>
-          Hủy an toàn
+          Cancel safely
         </button>
       )}
     </section>
   );
 }
-

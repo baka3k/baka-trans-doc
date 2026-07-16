@@ -24,8 +24,8 @@ export function acceptProgress(
 }
 
 export function formatEta(seconds?: number): string {
-  if (seconds === undefined) return "Đang ước tính";
-  if (seconds < 60) return `Khoảng ${seconds} giây`;
-  return `Khoảng ${Math.ceil(seconds / 60)} phút`;
+  if (seconds === undefined) return "Estimating";
+  if (seconds < 60) return `About ${seconds} second${seconds === 1 ? "" : "s"}`;
+  const minutes = Math.ceil(seconds / 60);
+  return `About ${minutes} minute${minutes === 1 ? "" : "s"}`;
 }
-
