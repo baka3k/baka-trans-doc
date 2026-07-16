@@ -7,4 +7,5 @@ src-tauri/target/
 *.tsbuildinfo
 .env
 .DS_Store
+.serena/
 src-tauri/gen/
